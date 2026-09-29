@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d120e">
+<title>灰冠の旅路 - Safari Edition</title>
+<style>
+:root{
+  --bg:#0b0f0c;--panel:#151b16;--panel2:#1c231c;--line:#3a4034;
+  --text:#efe9da;--muted:#aaa792;--gold:#d1b36a;--gold2:#8e7440;
+  --red:#b95e55;--green:#6d9d73;--blue:#6e8ca5;--ink:#12140f;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Georgia,"Yu Mincho","Hiragino Mincho ProN",serif}
+body{min-height:100vh;min-height:100dvh}
+button,input{font:inherit}
+button{touch-action:manipulation}
+.app{max-width:980px;margin:auto;padding:calc(10px + env(safe-area-inset-top)) 10px calc(18px + env(safe-area-inset-bottom))}
+.top{
+  position:sticky;top:0;z-index:20;margin:-10px -10px 10px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;
+  background:linear-gradient(180deg,rgba(10,14,11,.98),rgba(10,14,11,.92),rgba(10,14,11,0));
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)
+}
+.titleRow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+h1{font-size:22px;margin:0;letter-spacing:.08em}
+.subtitle{font-size:10px;color:var(--gold);letter-spacing:.2em;margin-top:2px}
+.engine{
+  padding:6px 8px;border-radius:999px;border:1px solid #665b3c;background:#191c17;
+  color:#d9c99c;font-size:10px;white-space:nowrap
+}
+.engine.live{border-color:#53745c;color:#b9dfc0}
+.toolbar{display:flex;gap:7px;margin-top:8px;overflow-x:auto;padding-bottom:2px}
+.btn{
+  border:1px solid #5b5137;background:linear-gradient(#2b3027,#1a1f1a);color:var(--text);
+  padding:10px 12px;border-radius:11px;min-height:42px;white-space:nowrap
+}
+.btn.primary{background:linear-gradient(#7b6233,#514326);border-color:#a98a4a}
+.btn.red{border-color:#74423e;color:#ffd8d4}
+.btn:disabled{opacity:.38}
+.card{
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line);border-radius:15px;overflow:hidden;box-shadow:0 15px 35px rgba(0,0,0,.26)
+}
+.head{display:flex;justify-content:space-between;gap:8px;padding:11px 13px;border-bottom:1px solid var(--line);color:var(--gold);font-weight:bold}
+.boardWrap{padding:10px}
+.board{
+  position:relative;width:100%;aspect-ratio:0.82/1;min-height:560px;max-height:760px;overflow:hidden;
+  border-radius:13px;border:1px solid #625b40;background:#263326
+}
+.board svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.route{stroke:#d8c18a;stroke-width:5;stroke-dasharray:10 12;opacity:.58;fill:none}
+.river{fill:none;stroke:#597b82;stroke-width:30;opacity:.55}
+.mountain{fill:#655f4e;stroke:#7e755c;stroke-width:3}
+.forest{fill:#2d4c34;opacity:.9}
+.ruin{fill:#74684e;opacity:.9}
+.node{
+  position:absolute;transform:translate(-50%,-50%);width:74px;height:74px;border-radius:50%;
+  border:2px solid #756b4d;background:radial-gradient(circle at 30% 20%,#44533c,#202820 70%);
+  color:#f5ecd8;font-size:11px;line-height:1.08;text-align:center;padding:4px;box-shadow:0 7px 14px rgba(0,0,0,.48);z-index:4
+}
+.node.enemy{background:radial-gradient(circle at 30% 20%,#70443c,#2b2421 70%)}
+.node.quest{background:radial-gradient(circle at 30% 20%,#695b31,#2b291f 70%)}
+.node.safe{background:radial-gradient(circle at 30% 20%,#36594f,#1e2a27 70%)}
+.node.final{background:radial-gradient(circle at 30% 20%,#803e35,#2a1d1b 70%)}
+.node.available{border-color:#e3c36f;box-shadow:0 0 0 5px rgba(227,195,111,.13),0 7px 14px rgba(0,0,0,.48)}
+.node.current{outline:3px solid rgba(249,218,136,.7);z-index:6}
+.node.done:after{
+  content:"✓";position:absolute;right:-2px;bottom:-4px;width:23px;height:23px;display:grid;place-items:center;
+  border-radius:50%;background:#416f4a;border:1px solid #9bc5a0;font-weight:bold
+}
+.node.locked{opacity:.48;filter:grayscale(.7)}
+.heroToken{
+  position:absolute;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;
+  background:#e2c778;border:3px solid #2c2414;box-shadow:0 0 0 4px rgba(226,199,120,.22),0 5px 10px #000;
+  z-index:10;pointer-events:none;transition:left .35s ease,top .35s ease
+}
+.heroToken:before{content:"◆";display:grid;place-items:center;height:100%;color:#3d3117;font-size:14px}
+.legend{
+  position:absolute;left:9px;bottom:9px;z-index:8;background:rgba(11,14,11,.82);border:1px solid #504b39;
+  border-radius:9px;padding:7px 9px;font-size:9px;color:#d5cfbe
+}
+.actionbar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px;border-top:1px solid var(--line)}
+.actionbar .btn{padding:11px 5px;font-size:12px}
+.dashboard{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+.stats{padding:12px}
+.heroLine{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.heroName{font-size:21px;font-weight:bold}
+.className{font-size:11px;color:var(--gold)}
+.die{width:52px;height:52px;display:grid;place-items:center;border-radius:12px;background:#eee3c8;color:#28251b;border:2px solid #b79c5f;font-size:27px;font-weight:bold}
+.bars{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+.statBox{background:#111610;border:1px solid #32382e;padding:9px;border-radius:9px;font-size:12px}
+.statBox b{color:#e5c675}
+.bar{height:8px;background:#090b09;border-radius:10px;margin-top:6px;overflow:hidden;border:1px solid #33372f}
+.bar i{display:block;height:100%;background:#b96358}
+.bar.focus i{background:#6f8ea8}
+.resources{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.pill{border:1px solid #42483b;background:#121711;border-radius:999px;padding:5px 7px;font-size:10px}
+.columns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.section{padding:10px 12px}
+.sectionTitle{font-size:12px;color:var(--gold);font-weight:bold;margin-bottom:7px}
+.lineItem{border:1px solid #33392f;background:#111610;border-radius:8px;padding:7px 8px;font-size:11px;margin-top:6px}
+.lineItem.done{opacity:.58;text-decoration:line-through}
+.log{height:190px;overflow:auto;padding:9px 11px;background:#101410}
+.logEntry{font-size:11px;line-height:1.45;padding:6px 0;border-bottom:1px dashed #30352d;color:#d6d1c1}
+.logEntry b{color:#dabb75}
+.modalBack{
+  position:fixed;inset:0;background:rgba(0,0,0,.76);z-index:50;display:none;align-items:flex-end;justify-content:center;
+  padding:12px calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))
+}
+.modalBack.show{display:flex}
+.modal{
+  width:min(650px,100%);max-height:86dvh;overflow:auto;background:linear-gradient(#22291f,#141914);
+  border:1px solid #756443;border-radius:18px 18px 13px 13px;box-shadow:0 25px 80px #000
+}
+.modalTitle{padding:14px 16px;border-bottom:1px solid #464334;color:var(--gold);font-size:19px;font-weight:bold}
+.modalBody{padding:14px 16px;font-size:13px;line-height:1.65}
+.modalBody p{margin:0 0 11px}
+.choices{display:flex;flex-direction:column;gap:8px;margin-top:13px}
+.choice{width:100%;text-align:left;border:1px solid #4e503f;background:#1a2019;color:var(--text);padding:11px 12px;border-radius:10px;min-height:46px}
+.choice:active{transform:scale(.99);background:#232b22}
+.classGrid{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+.classCard{border:1px solid #42483a;background:#111611;border-radius:10px;padding:10px;cursor:pointer}
+.classCard.sel{border-color:var(--gold);box-shadow:0 0 0 2px rgba(209,179,106,.15)}
+.classCard b{color:var(--gold);display:block;margin-bottom:3px}
+.nameInput{width:100%;margin-top:6px;padding:10px;border-radius:9px;border:1px solid #515443;background:#0e120e;color:#fff;font-size:16px}
+.combat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.combatBox{border:1px solid #3d4237;background:#101510;border-radius:9px;padding:9px;font-size:11px}
+.notice{
+  padding:9px 11px;margin:0 0 10px;border:1px solid #6c5b34;background:#211d13;border-radius:10px;
+  font-size:11px;color:#e4d39c
+}
+.toast{
+  position:fixed;z-index:80;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);
+  background:#22281f;border:1px solid #6d5d3b;border-radius:999px;padding:9px 13px;box-shadow:0 10px 30px #000;
+  display:none;font-size:11px;max-width:88vw;text-align:center
+}
+.toast.show{display:block}
+@media(min-width:760px){
+  .dashboard{grid-template-columns:1fr 1fr}
+  .board{min-height:680px}
+  .classGrid{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="titleRow">
+      <div>
+        <div class="subtitle">DARK FANTASY BOARD RPG</div>
+        <h1>灰冠の旅路</h1>
+      </div>
+      <div id="engine" class="engine">JavaScript待機中</div>
+    </div>
+    <div class="toolbar">
+      <button class="btn" id="helpBtn">遊び方</button>
+      <button class="btn" id="saveBtn">保存</button>
+      <button class="btn" id="loadBtn">読込</button>
+      <button class="btn red" id="resetBtn">最初から</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="head"><span>北境地図</span><span id="chapter">第一章：灰の街道</span></div>
+    <div class="boardWrap">
+      <div id="board" class="board">
+        <svg viewBox="0 0 820 1000" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="land" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#354836"/>
+              <stop offset=".45" stop-color="#4b4938"/>
+              <stop offset="1" stop-color="#293629"/>
+            </linearGradient>
+            <filter id="rough"><feTurbulence baseFrequency=".02" numOctaves="3" seed="4" type="fractalNoise"/><feBlend mode="multiply" in2="SourceGraphic"/></filter>
+          </defs>
+          <rect x="0" y="0" width="820" height="1000" fill="url(#land)"/>
+          <path class="river" d="M120,1000 C220,860 180,760 340,665 C500,570 470,430 650,300 C740,235 790,160 820,90"/>
+          <ellipse class="forest" cx="180" cy="410" rx="150" ry="195"/>
+          <ellipse class="forest" cx="520" cy="710" rx="170" ry="130"/>
+          <path class="mountain" d="M520 935 L585 770 L650 930 Z"/>
+          <path class="mountain" d="M610 920 L675 730 L740 900 Z"/>
+          <path class="mountain" d="M660 880 L735 675 L810 875 Z"/>
+          <rect class="ruin" x="360" y="742" width="70" height="70" transform="rotate(10 395 777)"/>
+          <rect class="ruin" x="635" y="265" width="60" height="80" transform="rotate(-8 665 305)"/>
+          <path class="route" d="M90 850 L215 730 L170 510"/>
+          <path class="route" d="M215 730 L400 825"/>
+          <path class="route" d="M170 510 L415 545"/>
+          <path class="route" d="M400 825 L415 545 L610 875"/>
+          <path class="route" d="M415 545 L625 615"/>
+          <path class="route" d="M610 875 L625 615 L735 790"/>
+          <path class="route" d="M625 615 L700 365"/>
+          <path class="route" d="M735 790 L700 365"/>
+          <path class="route" d="M735 790 L765 555 L700 365"/>
+          <path class="route" d="M700 365 L515 150"/>
+        </svg>
+
+        <button class="node safe" data-id="haven" style="left:11%;top:85%">霧谷の村</button>
+        <button class="node quest" data-id="oldroad" style="left:26%;top:73%">古王の街道</button>
+        <button class="node enemy" data-id="whisperwood" style="left:21%;top:51%">囁き森</button>
+        <button class="node enemy" data-id="watchtower" style="left:49%;top:82%">崩れ見張り塔</button>
+        <button class="node quest" data-id="stonebridge" style="left:51%;top:55%">石灰の橋</button>
+        <button class="node safe" data-id="dwarfhold" style="left:75%;top:87%">炉辺の砦</button>
+        <button class="node enemy" data-id="redmarsh" style="left:76%;top:61%">赤泥沼</button>
+        <button class="node quest" data-id="highpass" style="left:89%;top:79%">白牙峠</button>
+        <button class="node safe" data-id="shrine" style="left:93%;top:55%">星見の聖堂</button>
+        <button class="node enemy" data-id="blackgate" style="left:85%;top:36%">黒鐘の城門</button>
+        <button class="node final" data-id="citadel" style="left:63%;top:15%">灰冠の城塞</button>
+
+        <div id="heroToken" class="heroToken" style="left:11%;top:85%"></div>
+        <div class="legend">金枠＝移動可能　✓＝攻略済み　赤＝危険地帯</div>
+      </div>
+    </div>
+    <div class="actionbar">
+      <button class="btn primary" id="campBtn">野営</button>
+      <button class="btn" id="searchBtn">探索</button>
+      <button class="btn" id="focusBtn">瞑想</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <div class="card">
+      <div class="head"><span>旅人</span><span id="dayText">1日目</span></div>
+      <div class="stats">
+        <div class="heroLine">
+          <div><div class="heroName" id="heroName">旅人</div><div class="className" id="className">放浪剣士</div></div>
+          <div class="die" id="die">–</div>
+        </div>
+        <div class="bars">
+          <div class="statBox">HP <b id="hpText">12 / 12</b><div class="bar"><i id="hpBar"></i></div></div>
+          <div class="statBox">意志 <b id="focusText">6 / 6</b><div class="bar focus"><i id="focusBar"></i></div></div>
+          <div class="statBox">武力 <b id="atkText">3</b></div>
+          <div class="statBox">技量 <b id="skillText">2</b></div>
+        </div>
+        <div class="resources">
+          <span class="pill">🪙 銀貨 <b id="goldText">8</b></span>
+          <span class="pill">🥖 食料 <b id="foodText">4</b></span>
+          <span class="pill">✦ 名声 <b id="renownText">0</b></span>
+          <span class="pill">☠ 闇 <b id="doomText">0</b>/10</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="head"><span>旅の記録</span><span>北境暦</span></div>
+      <div class="log" id="log"></div>
+    </div>
+
+    <div class="card">
+      <div class="head"><span>目的</span><span>QUEST</span></div>
+      <div class="section" id="quests"></div>
+    </div>
+
+    <div class="card">
+      <div class="head"><span>所持品</span><span>INVENTORY</span></div>
+      <div class="section" id="inventory"></div>
+    </div>
+  </div>
+</div>
+
+<div id="modalBack" class="modalBack">
+  <div class="modal">
+    <div id="modalTitle" class="modalTitle"></div>
+    <div id="modalBody" class="modalBody"></div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+var $ = function(id){ return document.getElementById(id); };
+
+var NODES = {
+  haven:{id:"haven",name:"霧谷の村",x:11,y:85,type:"safe",desc:"北境のはずれにある静かな村。旅はここから始まる。",links:["oldroad","whisperwood"]},
+  oldroad:{id:"oldroad",name:"古王の街道",x:26,y:73,type:"quest",desc:"崩れた石畳に、滅びた北王国の印が残っている。",links:["haven","watchtower","whisperwood"]},
+  whisperwood:{id:"whisperwood",name:"囁き森",x:21,y:51,type:"enemy",desc:"風がないのに木々が囁く森。旅人の名を呼ぶ声がする。",links:["haven","oldroad","stonebridge"]},
+  watchtower:{id:"watchtower",name:"崩れ見張り塔",x:49,y:82,type:"enemy",desc:"夜ごと赤い火が灯る廃塔。何者かが街道を見張っている。",links:["oldroad","stonebridge","dwarfhold"]},
+  stonebridge:{id:"stonebridge",name:"石灰の橋",x:51,y:55,type:"quest",desc:"黒川を越える古い石橋。中央部は崩れかけている。",links:["whisperwood","watchtower","redmarsh"]},
+  dwarfhold:{id:"dwarfhold",name:"炉辺の砦",x:75,y:87,type:"safe",desc:"山の鍛冶民が守る小砦。旅人には温かい炉と食事が与えられる。",links:["watchtower","redmarsh","highpass"]},
+  redmarsh:{id:"redmarsh",name:"赤泥沼",x:76,y:61,type:"enemy",desc:"古戦場の泥が赤く染まった湿地。死者の鎧が半ば沈んでいる。",links:["stonebridge","dwarfhold","blackgate"]},
+  highpass:{id:"highpass",name:"白牙峠",x:89,y:79,type:"quest",desc:"北境を分ける険しい峠。雪嵐は季節を問わず旅人を襲う。",links:["dwarfhold","blackgate","shrine"]},
+  shrine:{id:"shrine",name:"星見の聖堂",x:93,y:55,type:"safe",desc:"星の運行を記録した古い礼拝堂。今も青い灯が消えずに残る。",links:["highpass","blackgate"]},
+  blackgate:{id:"blackgate",name:"黒鐘の城門",x:85,y:36,type:"enemy",desc:"死都の入口。門上の黒鐘は、近づく者がなくても鳴る。",links:["redmarsh","highpass","shrine","citadel"]},
+  citadel:{id:"citadel",name:"灰冠の城塞",x:63,y:15,type:"final",desc:"古王の灰冠が封じられた城塞。北境を覆う闇の源。",links:["blackgate"]}
+};
+
+var CLASSES = {
+  sword:{name:"放浪剣士",desc:"高いHPと武力を持つ。戦闘向き。",hp:14,focus:5,atk:4,skill:1,items:["古びた長剣","鉄縁の小盾"]},
+  ranger:{name:"野伏",desc:"探索・技量判定に強い万能型。",hp:11,focus:6,atk:3,skill:3,items:["狩人の弓","野営道具"]},
+  warden:{name:"星守り",desc:"意志が高く、闇への抵抗力を持つ。",hp:10,focus:8,atk:2,skill:2,items:["星鉄の杖","星見の印"]}
+};
+
+var ENEMIES = {
+  whisperwood:{name:"森喰らい",hp:7,atk:2,armor:1,reward:3},
+  watchtower:{name:"灰狼の群れ",hp:9,atk:3,armor:1,reward:4},
+  redmarsh:{name:"沼の亡者",hp:11,atk:3,armor:2,reward:5},
+  blackgate:{name:"黒鐘の騎士",hp:14,atk:4,armor:2,reward:7},
+  citadel:{name:"灰冠の守り手",hp:20,atk:5,armor:3,reward:12}
+};
+
+var state;
+
+function fresh(){
+  return {
+    heroName:"アルド",classId:"sword",className:"放浪剣士",
+    maxHp:14,hp:14,maxFocus:5,focus:5,atk:4,skill:1,
+    gold:8,food:4,renown:0,doom:0,day:1,current:"haven",
+    completed:["haven"],items:["古びた長剣","鉄縁の小盾"],
+    quests:{tower:false,bridge:false,pass:false,final:false},
+    combat:null,lastDie:"–",gameEnded:false
+  };
+}
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];});
+}
+function dice(){
+  var n=Math.floor(Math.random()*6)+1;
+  state.lastDie=n;$("die").textContent=n;return n;
+}
+function addLog(msg){
+  var d=document.createElement("div");
+  d.className="logEntry";
+  d.innerHTML="<b>"+state.day+"日目</b> — "+msg;
+  $("log").insertBefore(d,$("log").firstChild);
+}
+function toast(msg){
+  var t=$("toast");t.textContent=msg;t.classList.add("show");
+  window.setTimeout(function(){t.classList.remove("show");},1700);
+}
+function modal(title,html){
+  $("modalTitle").textContent=title;$("modalBody").innerHTML=html;$("modalBack").classList.add("show");
+}
+function closeModal(){ $("modalBack").classList.remove("show"); }
+function button(label,fn,disabled){
+  var b=document.createElement("button");b.className="choice";b.textContent=label;b.disabled=!!disabled;b.addEventListener("click",fn,false);return b;
+}
+function choices(arr){
+  var box=document.createElement("div");box.className="choices";
+  for(var i=0;i<arr.length;i++) box.appendChild(arr[i]);
+  $("modalBody").appendChild(box);
+}
+function nodeArray(){
+  var out=[];for(var k in NODES){if(NODES.hasOwnProperty(k))out.push(NODES[k]);}return out;
+}
+
+function update(){
+  $("heroName").textContent=state.heroName;
+  $("className").textContent=state.className;
+  $("dayText").textContent=state.day+"日目";
+  $("hpText").textContent=Math.max(0,state.hp)+" / "+state.maxHp;
+  $("focusText").textContent=Math.max(0,state.focus)+" / "+state.maxFocus;
+  $("atkText").textContent=state.atk;$("skillText").textContent=state.skill;
+  $("goldText").textContent=state.gold;$("foodText").textContent=state.food;
+  $("renownText").textContent=state.renown;$("doomText").textContent=state.doom;
+  $("die").textContent=state.lastDie;
+  $("hpBar").style.width=Math.max(0,Math.min(100,state.hp/state.maxHp*100))+"%";
+  $("focusBar").style.width=Math.max(0,Math.min(100,state.focus/state.maxFocus*100))+"%";
+
+  var n=NODES[state.current], tok=$("heroToken");
+  tok.style.left=n.x+"%";tok.style.top=n.y+"%";
+
+  var els=document.querySelectorAll(".node");
+  for(var i=0;i<els.length;i++){
+    var id=els[i].getAttribute("data-id");
+    els[i].classList.remove("available","current","done","locked");
+    if(id===state.current)els[i].classList.add("current");
+    if(n.links.indexOf(id)!==-1)els[i].classList.add("available");
+    if(state.completed.indexOf(id)!==-1)els[i].classList.add("done");
+    if(id!==state.current && n.links.indexOf(id)===-1)els[i].classList.add("locked");
+  }
+
+  var q=[
+    ["崩れ見張り塔の火を消す",state.quests.tower],
+    ["石灰の橋を確保する",state.quests.bridge],
+    ["白牙峠を越える",state.quests.pass],
+    ["灰冠の城塞で王冠を封じる",state.quests.final]
+  ];
+  var qhtml="";
+  for(i=0;i<q.length;i++) qhtml+='<div class="lineItem '+(q[i][1]?"done":"")+'">'+(q[i][1]?"✓ ":"○ ")+q[i][0]+"</div>";
+  $("quests").innerHTML=qhtml;
+
+  var ih="";for(i=0;i<state.items.length;i++)ih+='<div class="lineItem">'+esc(state.items[i])+"</div>";
+  $("inventory").innerHTML=ih||'<div class="lineItem">なし</div>';
+
+  if(!state.gameEnded){
+    if(state.hp<=0) endGame("あなたは北境の荒野に倒れた。");
+    else if(state.doom>=10) endGame("闇が北境を覆い、旅路は閉ざされた。");
+  }
+}
+
+function check(stat,target){
+  var d=dice(),bonus=stat==="focus"?Math.ceil(state.focus/3):state[stat];
+  return {roll:d,total:d+bonus,ok:d+bonus>=target};
+}
+
+function openNode(id){
+  var dest=NODES[id],cur=NODES[state.current];
+  if(id===state.current){
+    modal(dest.name,"<p>"+dest.desc+"</p><p>現在地です。</p>");
+    choices([button("閉じる",closeModal)]);
+    return;
+  }
+  if(cur.links.indexOf(id)===-1){toast("ここから直接は移動できません");return;}
+  modal(dest.name,"<p>"+dest.desc+"</p><p><b>ここへ移動しますか？</b><br>移動すると1日経過し、食料1を消費します。</p>");
+  choices([button("移動する",function(){moveTo(id);}),button("やめる",closeModal)]);
+}
+
+function moveTo(id){
+  closeModal();
+  state.day++;
+  if(state.food>0)state.food--;else {state.hp--;addLog("食料が尽きており、空腹でHPを1失った。");}
+  state.current=id;
+  addLog(NODES[id].name+"へ移動した。");
+  update();
+  window.setTimeout(function(){resolve(id);},260);
+}
+
+function resolve(id){
+  var n=NODES[id];
+  if(state.completed.indexOf(id)!==-1 && id!=="citadel"){
+    if(n.type==="safe"){
+      state.hp=Math.min(state.maxHp,state.hp+1);state.focus=Math.min(state.maxFocus,state.focus+1);
+      addLog(n.name+"で小休止した。HP・意志+1。");update();
+    }
+    modal(n.name,"<p>"+n.desc+"</p><p>以前より静かだ。大きな脅威は感じない。</p>");
+    choices([button("閉じる",closeModal)]);
+    return;
+  }
+  if(ENEMIES[id]){startCombat(id);return;}
+  if(id==="oldroad"){oldRoad();return;}
+  if(id==="stonebridge"){stoneBridge();return;}
+  if(id==="highpass"){highPass();return;}
+  if(n.type==="safe"){safePlace(id);return;}
+  randomEvent();
+}
+
+function complete(id){ if(state.completed.indexOf(id)===-1)state.completed.push(id); }
+
+function oldRoad(){
+  modal("古王の街道","<p>道端の石碑には、滅びた王国の行軍路が刻まれている。写し取れば先の旅に役立つかもしれない。</p>");
+  choices([
+    button("地図を写す（技量判定 7）",function(){
+      var r=check("skill",7);
+      if(r.ok){state.items.push("古街道の写し");state.gold+=2;state.renown++;addLog("判定 "+r.total+"：古街道の写しを得た。銀貨+2、名声+1。");}
+      else{state.focus=Math.max(0,state.focus-1);addLog("判定 "+r.total+"：解読に失敗。意志-1。");}
+      complete("oldroad");closeModal();update();
+    }),
+    button("石碑を離れる",function(){complete("oldroad");closeModal();update();})
+  ]);
+}
+function stoneBridge(){
+  modal("石灰の橋","<p>橋の中央は崩れ、黒い川が真下で唸っている。ロープ跡を使えば渡れそうだ。</p>");
+  choices([
+    button("慎重に渡る（技量判定 8）",function(){
+      var r=check("skill",8);
+      state.quests.bridge=true;complete("stonebridge");
+      if(r.ok){state.renown+=2;addLog("判定 "+r.total+"：橋を確保した。名声+2。");}
+      else{state.hp-=3;addLog("判定 "+r.total+"：足を滑らせ3ダメージ。だが橋は確保した。");}
+      closeModal();update();
+    }),
+    button("銀貨3で渡し守を雇う",function(){
+      if(state.gold<3){toast("銀貨が足りません");return;}
+      state.gold-=3;state.quests.bridge=true;complete("stonebridge");addLog("渡し守を雇い、安全に橋を確保した。");
+      closeModal();update();
+    })
+  ]);
+}
+function highPass(){
+  modal("白牙峠","<p>雪煙で視界が消える。石標だけが北を示している。</p>");
+  choices([
+    button("吹雪を押して進む（意志判定 8）",function(){
+      var r=check("focus",8);state.quests.pass=true;complete("highpass");
+      if(r.ok){state.renown+=2;addLog("判定 "+r.total+"：吹雪を越えた。名声+2。");}
+      else{state.hp-=2;state.focus=Math.max(0,state.focus-2);addLog("判定 "+r.total+"：HP-2、意志-2。");}
+      closeModal();update();
+    }),
+    button("食料2を使い天候を待つ",function(){
+      if(state.food<2){toast("食料が足りません");return;}
+      state.food-=2;state.quests.pass=true;complete("highpass");addLog("天候が収まるのを待ち、峠を越えた。");
+      closeModal();update();
+    })
+  ]);
+}
+function safePlace(id){
+  complete(id);state.hp=Math.min(state.maxHp,state.hp+3);state.focus=Math.min(state.maxFocus,state.focus+2);
+  if(id==="dwarfhold" && state.items.indexOf("炉辺の短剣")===-1){state.items.push("炉辺の短剣");state.atk++;addLog("鍛冶民から炉辺の短剣を受け取った。武力+1。");}
+  else if(id==="shrine" && state.items.indexOf("星の護符")===-1){state.items.push("星の護符");state.maxFocus++;state.focus++;addLog("星の護符を授かった。最大意志+1。");}
+  addLog(NODES[id].name+"で休息した。HP+3、意志+2。");update();
+  modal(NODES[id].name,"<p>"+NODES[id].desc+"</p><p>ここは束の間の安息地だ。傷と心を休めることができた。</p>");
+  choices([button("旅を続ける",closeModal)]);
+}
+
+function startCombat(id){
+  var e=ENEMIES[id];
+  state.combat={nodeId:id,name:e.name,hp:e.hp,maxHp:e.hp,atk:e.atk,armor:e.armor,reward:e.reward};
+  combatScreen("敵が行く手を塞いだ。");
+}
+function combatScreen(msg){
+  var c=state.combat;
+  modal("戦闘："+c.name,
+    "<p>"+msg+"</p>"+
+    '<div class="combat"><div class="combatBox"><b>'+esc(state.heroName)+'</b><br>HP '+state.hp+"/"+state.maxHp+"<br>武力 "+state.atk+
+    '</div><div class="combatBox"><b>'+esc(c.name)+'</b><br>HP '+Math.max(0,c.hp)+"/"+c.maxHp+"<br>攻撃 "+c.atk+" / 防御 "+c.armor+"</div></div>"+
+    "<p>攻撃：1D6＋武力を基準にダメージ。<br>強打：意志2を消費して威力上昇。</p>"
+  );
+  choices([
+    button("⚔ 攻撃する",normalAttack),
+    button("✦ 意志2で強打",powerAttack,state.focus<2),
+    button("↩ 退却する",flee,state.combat.nodeId==="citadel")
+  ]);
+}
+function normalAttack(){
+  var c=state.combat,d=dice(),dmg=Math.max(1,d+state.atk-c.armor-2);
+  c.hp-=dmg;addLog(c.name+"へ攻撃。出目"+d+"、"+dmg+"ダメージ。");
+  if(c.hp<=0){winCombat();return;}enemyTurn();if(state.hp>0)combatScreen("敵はまだ立っている。");update();
+}
+function powerAttack(){
+  if(state.focus<2)return;
+  state.focus-=2;
+  var c=state.combat,d=dice(),dmg=Math.max(2,d+state.atk+2-c.armor-2);
+  c.hp-=dmg;addLog("強打。出目"+d+"、"+dmg+"ダメージ。");
+  if(c.hp<=0){winCombat();return;}enemyTurn();if(state.hp>0)combatScreen("強打の反動をこらえる。");update();
+}
+function enemyTurn(){
+  var c=state.combat,d=dice(),def=(state.items.indexOf("鉄縁の小盾")!==-1?2:1),dmg=Math.max(1,d+c.atk-def-4);
+  state.hp-=dmg;addLog(c.name+"の反撃。出目"+d+"、"+dmg+"ダメージ。");
+}
+function flee(){
+  var cur=NODES[state.current],back=cur.links[0];
+  state.current=back;state.focus=Math.max(0,state.focus-1);state.combat=null;
+  addLog("戦闘から退却した。意志-1。");closeModal();update();
+}
+function winCombat(){
+  var id=state.combat.nodeId,c=state.combat;
+  state.gold+=c.reward;state.renown+=2;complete(id);
+  if(id==="watchtower")state.quests.tower=true;
+  if(id==="citadel")state.quests.final=true;
+  state.combat=null;addLog(c.name+"を倒した。銀貨+"+c.reward+"、名声+2。");update();
+  if(id==="citadel"){victory();return;}
+  modal("勝利","<p>"+esc(c.name)+"を退けた。</p><p>銀貨 "+c.reward+" と名声 2 を得た。</p>");
+  choices([button("旅を続ける",closeModal)]);
+}
+
+var EVENTS=[
+  {
+    title:"道端の巡礼者",text:"灰色の外套をまとった老人が、祝福と引き換えに施しを求める。",
+    a:"銀貨2を施す",b:"断って先を急ぐ",
+    fa:function(){if(state.gold<2){toast("銀貨が足りません");return false;}state.gold-=2;state.focus=Math.min(state.maxFocus,state.focus+2);addLog("巡礼者の祝福。意志+2。");return true;},
+    fb:function(){state.doom++;addLog("老人を後にした。闇+1。");return true;}
+  },
+  {
+    title:"倒れた荷馬車",text:"壊れた荷馬車の荷台に物資が残っている。罠かもしれない。",
+    a:"調べる（技量判定 8）",b:"触れずに去る",
+    fa:function(){var r=check("skill",8);if(r.ok){state.food+=2;state.gold+=2;addLog("判定 "+r.total+"：食料+2、銀貨+2。");}else{state.hp-=2;addLog("判定 "+r.total+"：荷台が崩れ2ダメージ。");}return true;},
+    fb:function(){addLog("荷馬車を避けた。");return true;}
+  },
+  {
+    title:"古代文字の石碑",text:"苔むした石碑に、古王国の警告が刻まれている。",
+    a:"解読する（技量判定 9）",b:"祈りを捧げる",
+    fa:function(){var r=check("skill",9);if(r.ok){if(state.items.indexOf("古王の護符")===-1)state.items.push("古王の護符");state.renown+=2;addLog("判定 "+r.total+"：古王の護符、名声+2。");}else{state.doom++;addLog("判定 "+r.total+"：闇+1。");}return true;},
+    fb:function(){state.focus=Math.min(state.maxFocus,state.focus+1);addLog("静かな祈り。意志+1。");return true;}
+  }
+];
+function randomEvent(){
+  var e=EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  modal(e.title,"<p>"+e.text+"</p>");
+  choices([
+    button(e.a,function(){if(e.fa()){closeModal();update();}}),
+    button(e.b,function(){if(e.fb()){closeModal();update();}})
+  ]);
+}
+
+function camp(){
+  if(state.food<1){toast("食料がありません");return;}
+  state.day++;state.food--;state.hp=Math.min(state.maxHp,state.hp+4);state.focus=Math.min(state.maxFocus,state.focus+1);
+  addLog("野営した。HP+4、意志+1、食料-1。");
+  if(Math.random()<.22){state.doom++;addLog("夜の向こうで黒鐘が鳴った。闇+1。");}
+  update();
+}
+function search(){
+  state.day++;var r=check("skill",8);
+  if(r.ok){var g=Math.floor(Math.random()*4)+2;state.gold+=g;if(Math.random()<.45)state.food++;addLog("探索成功 "+r.total+"：銀貨+"+g+"。");}
+  else{state.focus=Math.max(0,state.focus-1);addLog("探索失敗 "+r.total+"：意志-1。");}
+  update();
+}
+function meditate(){
+  state.day++;var d=dice(),rec=d>=4?2:1;state.focus=Math.min(state.maxFocus,state.focus+rec);
+  if(d===1){state.doom++;addLog("瞑想中に闇の囁きを聞いた。闇+1。");}
+  addLog("瞑想。意志+"+rec+"。");update();
+}
+function victory(){
+  state.gameEnded=true;
+  modal("灰冠は封じられた",
+    "<p>城塞最深部。あなたは灰冠を闇の祭壇から引き離し、古い封印を蘇らせた。</p>"+
+    "<p>北境に朝日が差し込む。長い冬は、ようやく終わろうとしている。</p>"+
+    "<p><b>旅の記録</b><br>"+state.day+"日 / 名声 "+state.renown+" / 闇 "+state.doom+"</p>");
+  choices([button("新しい旅を始める",setup)]);
+}
+function endGame(reason){
+  state.gameEnded=true;
+  modal("旅の終わり","<p>"+reason+"</p><p>だが北境の物語は、次の旅人へ受け継がれる。</p>");
+  choices([button("最初から",setup)]);
+}
+function help(){
+  modal("遊び方",
+    '<div class="notice">上部に「ゲームエンジン稼働中」と表示されていれば、SafariでJavaScriptが正常に動いています。</div>'+
+    "<p><b>目的</b><br>地図を移動し、4つの主要目標を達成して灰冠の城塞へ向かいます。</p>"+
+    "<p><b>移動</b><br>現在地と道でつながった金枠の地点をタップ。移動ごとに1日経過し、食料1を消費します。</p>"+
+    "<p><b>判定</b><br>1D6＋能力値。目標値以上で成功。</p>"+
+    "<p><b>戦闘</b><br>攻撃・強打・退却を選びます。HP0または闇10で敗北です。</p>");
+  choices([button("閉じる",closeModal)]);
+}
+function save(){
+  try{localStorage.setItem("ashenCrownSafariSave",JSON.stringify(state));toast("保存しました");}
+  catch(e){toast("この開き方では保存機能が使えません");}
+}
+function load(){
+  try{
+    var raw=localStorage.getItem("ashenCrownSafariSave");
+    if(!raw){toast("保存データがありません");return;}
+    state=JSON.parse(raw);$("log").innerHTML="";addLog("保存した旅を再開した。");update();toast("読み込みました");
+  }catch(e){toast("保存データを読み込めません");}
+}
+function setup(){
+  state=fresh();$("log").innerHTML="";state.gameEnded=false;
+  modal("旅人を選ぶ",
+    "<p>北境では、滅びた王の黒鐘が再び鳴り始めた。あなたは灰冠を封じるため、霧谷の村から旅立つ。</p>"+
+    '<label>旅人の名<input id="nameInput" class="nameInput" value="アルド" maxlength="12"></label>'+
+    '<div class="classGrid">'+
+      '<div class="classCard sel" data-c="sword"><b>放浪剣士</b><small>高HP・高武力。戦闘向き。</small></div>'+
+      '<div class="classCard" data-c="ranger"><b>野伏</b><small>高技量。探索と判定に強い。</small></div>'+
+      '<div class="classCard" data-c="warden"><b>星守り</b><small>高意志。闇への抵抗に強い。</small></div>'+
+    "</div>");
+  var chosen="sword",cards=document.querySelectorAll(".classCard");
+  for(var i=0;i<cards.length;i++){
+    cards[i].addEventListener("click",function(){
+      var all=document.querySelectorAll(".classCard");
+      for(var j=0;j<all.length;j++)all[j].classList.remove("sel");
+      this.classList.add("sel");chosen=this.getAttribute("data-c");
+    },false);
+  }
+  choices([button("旅立つ",function(){
+    var c=CLASSES[chosen],name=$("nameInput").value.replace(/^\s+|\s+$/g,"")||"名もなき旅人";
+    state.heroName=name;state.classId=chosen;state.className=c.name;
+    state.maxHp=c.hp;state.hp=c.hp;state.maxFocus=c.focus;state.focus=c.focus;state.atk=c.atk;state.skill=c.skill;state.items=c.items.slice(0);
+    addLog("霧谷の村を出発した。北の空で黒鐘が鳴っている。");closeModal();update();
+  })]);
+  update();
+}
+
+function bind(){
+  var nodes=document.querySelectorAll(".node");
+  for(var i=0;i<nodes.length;i++){
+    nodes[i].addEventListener("click",function(){openNode(this.getAttribute("data-id"));},false);
+  }
+  $("campBtn").addEventListener("click",camp,false);
+  $("searchBtn").addEventListener("click",search,false);
+  $("focusBtn").addEventListener("click",meditate,false);
+  $("helpBtn").addEventListener("click",help,false);
+  $("saveBtn").addEventListener("click",save,false);
+  $("loadBtn").addEventListener("click",load,false);
+  $("resetBtn").addEventListener("click",setup,false);
+  $("modalBack").addEventListener("click",function(e){if(e.target===$("modalBack") && !state.combat)closeModal();},false);
+}
+
+function boot(){
+  $("engine").textContent="ゲームエンジン稼働中";
+  $("engine").classList.add("live");
+  bind();
+  setup();
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,false);else boot();
+
+})();
+</script>
+</body>
+</html>
